@@ -1,65 +1,139 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { ContactInfoForm } from '@/components/ResumeForm/ContactInfoForm';
+import { SummaryForm } from '@/components/ResumeForm/SummaryForm';
+import { SkillsForm } from '@/components/ResumeForm/SkillsForm';
+import { ExperienceForm } from '@/components/ResumeForm/ExperienceForm';
+import { ProjectsForm } from '@/components/ResumeForm/ProjectsForm';
+import { EducationForm } from '@/components/ResumeForm/EducationForm';
+import { AwardsForm } from '@/components/ResumeForm/AwardsForm';
+import { ResumePreview } from '@/components/ResumePreview/ResumePreview';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Download, FileText } from 'lucide-react';
+import { generateResumePDF } from '@/lib/pdf-generator';
 
 export default function Home() {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    setIsGenerating(true);
+    try {
+      await generateResumePDF('resume-preview', 'my-resume.pdf');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  FAANG Resume Generator
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  ATS-Friendly Resume Builder
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={isGenerating}
+              size="lg"
+              className="gap-2"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <Download className="h-4 w-4" />
+              {isGenerating ? 'Generating...' : 'Download PDF'}
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Form Section */}
+          <div className="space-y-6">
+            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm rounded-lg p-6 shadow-lg">
+              <Tabs defaultValue="contact" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
+                  <TabsTrigger value="contact">Contact</TabsTrigger>
+                  <TabsTrigger value="summary">Summary</TabsTrigger>
+                  <TabsTrigger value="skills">Skills</TabsTrigger>
+                  <TabsTrigger value="experience">Experience</TabsTrigger>
+                  <TabsTrigger value="projects">Projects</TabsTrigger>
+                  <TabsTrigger value="education">Education</TabsTrigger>
+                  <TabsTrigger value="awards">Awards</TabsTrigger>
+                </TabsList>
+
+                <div className="mt-6">
+                  <TabsContent value="contact" className="space-y-4">
+                    <ContactInfoForm />
+                  </TabsContent>
+
+                  <TabsContent value="summary" className="space-y-4">
+                    <SummaryForm />
+                  </TabsContent>
+
+                  <TabsContent value="skills" className="space-y-4">
+                    <SkillsForm />
+                  </TabsContent>
+
+                  <TabsContent value="experience" className="space-y-4">
+                    <ExperienceForm />
+                  </TabsContent>
+
+                  <TabsContent value="projects" className="space-y-4">
+                    <ProjectsForm />
+                  </TabsContent>
+
+                  <TabsContent value="education" className="space-y-4">
+                    <EducationForm />
+                  </TabsContent>
+
+                  <TabsContent value="awards" className="space-y-4">
+                    <AwardsForm />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
+
+            {/* Tips Card */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+              <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                💡 ATS-Friendly Tips
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• Use action verbs and quantifiable results in accomplishments</li>
+                <li>• Format: &quot;[Action] that resulted in [quantifiable outcome]&quot;</li>
+                <li>• Keep skills relevant to the job you&apos;re applying for</li>
+                <li>• Use standard section headings for better ATS parsing</li>
+                <li>• Include keywords from job descriptions in your experience</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Right: Preview Section */}
+          <div className="lg:sticky lg:top-24 h-fit">
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg p-6 shadow-lg">
+              <h2 className="text-xl font-semibold mb-4">Resume Preview</h2>
+              <div className="overflow-auto max-h-[calc(100vh-200px)] border rounded-lg">
+                <ResumePreview />
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
