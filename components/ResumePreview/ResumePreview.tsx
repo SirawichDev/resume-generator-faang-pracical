@@ -1,7 +1,6 @@
 'use client';
 
 import { useResumeStore } from '@/lib/resume-store';
-import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 export function ResumePreview() {
@@ -82,8 +81,8 @@ export function ResumePreview() {
               Work Experience
             </h2>
             <div className="space-y-3">
-              {experience.map((exp, index) => (
-                <div key={exp.id}>
+              {experience.map((exp) => (
+                <div key={exp.id} data-pdf-section="experience" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   <div className="flex justify-between items-baseline">
                     <div>
                       <span className="font-semibold" style={{ fontSize: '10pt' }}>
@@ -123,7 +122,7 @@ export function ResumePreview() {
             </h2>
             <div className="space-y-3">
               {projects.map((project) => (
-                <div key={project.id}>
+                <div key={project.id} data-pdf-section="project" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   <div className="flex justify-between items-baseline">
                     <span className="font-semibold" style={{ fontSize: '10pt' }}>
                       {project.name}
@@ -170,16 +169,18 @@ export function ResumePreview() {
             </h2>
             <div className="space-y-3">
               {education.map((edu) => (
-                <div key={edu.id}>
+                <div key={edu.id} data-pdf-section="education" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   <div className="flex justify-between items-baseline">
                     <div>
                       <span className="font-semibold" style={{ fontSize: '10pt' }}>
                         {edu.institution}, {edu.location}
                       </span>
                     </div>
-                    <div className="text-sm" style={{ fontSize: '10pt' }}>
-                      {edu.startDate} - {edu.endDate}
-                    </div>
+                    {(edu.startDate || edu.endDate) && (
+                      <div className="text-sm" style={{ fontSize: '10pt' }}>
+                        {edu.startDate && edu.endDate ? `${edu.startDate} - ${edu.endDate}` : edu.startDate || edu.endDate}
+                      </div>
+                    )}
                   </div>
                   <div className="italic mb-1" style={{ fontSize: '10pt' }}>
                     {edu.degree} in {edu.field}
@@ -211,7 +212,7 @@ export function ResumePreview() {
             </h2>
             <div className="space-y-2">
               {awards.map((award) => (
-                <div key={award.id}>
+                <div key={award.id} data-pdf-section="award" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                   <div className="flex justify-between items-baseline">
                     <span className="font-semibold" style={{ fontSize: '10pt' }}>
                       {award.title}

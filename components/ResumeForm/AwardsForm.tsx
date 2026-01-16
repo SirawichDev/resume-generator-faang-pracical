@@ -7,54 +7,80 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, Award as AwardIcon } from 'lucide-react';
+import { Plus, Trash2, Award as AwardIcon, Pencil } from 'lucide-react';
 import { Award } from '@/types/resume';
 
 export function AwardsForm() {
-  const { resumeData, addAward, removeAward } = useResumeStore();
+  const { resumeData, addAward, updateAward, removeAward } = useResumeStore();
   const [isAdding, setIsAdding] = useState(false);
-  const [newAward, setNewAward] = useState<Omit<Award, 'id'>>({
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Omit<Award, 'id'>>({
     title: '',
     issuer: '',
     date: '',
     description: '',
   });
 
-  const handleAddAward = () => {
-    if (!newAward.title || !newAward.issuer) return;
-    
-    addAward({
-      ...newAward,
-      id: Date.now().toString(),
-    });
-    
-    setNewAward({
+  const resetForm = () => {
+    setFormData({
       title: '',
       issuer: '',
       date: '',
       description: '',
     });
     setIsAdding(false);
+    setEditingId(null);
   };
+
+  const handleAddAward = () => {
+    if (!formData.title || !formData.issuer) return;
+    
+    addAward({
+      ...formData,
+      id: Date.now().toString(),
+    });
+    
+    resetForm();
+  };
+
+  const handleUpdateAward = () => {
+    if (!editingId || !formData.title || !formData.issuer) return;
+    
+    updateAward(editingId, formData);
+    resetForm();
+  };
+
+  const startEditing = (award: Award) => {
+    setEditingId(award.id);
+    setFormData({
+      title: award.title,
+      issuer: award.issuer,
+      date: award.date,
+      description: award.description || '',
+    });
+    setIsAdding(false);
+  };
+
+  const isFormOpen = isAdding || editingId !== null;
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Awards & Certifications</h2>
-        <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
+        <Button onClick={() => { resetForm(); setIsAdding(true); }} disabled={isFormOpen}>
           <Plus className="h-4 w-4 mr-1" />
           Add Award
         </Button>
       </div>
 
-      {isAdding && (
+      {isFormOpen && (
         <Card className="p-4 mb-4 bg-muted/50">
           <div className="space-y-4">
             <div>
               <Label>Title *</Label>
               <Input
-                value={newAward.title}
-                onChange={(e) => setNewAward({ ...newAward, title: e.target.value })}
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="AWS Certified Solutions Architect"
               />
             </div>
@@ -63,16 +89,16 @@ export function AwardsForm() {
               <div>
                 <Label>Issuer *</Label>
                 <Input
-                  value={newAward.issuer}
-                  onChange={(e) => setNewAward({ ...newAward, issuer: e.target.value })}
+                  value={formData.issuer}
+                  onChange={(e) => setFormData({ ...formData, issuer: e.target.value })}
                   placeholder="Amazon Web Services"
                 />
               </div>
               <div>
                 <Label>Date (MM/YYYY)</Label>
                 <Input
-                  value={newAward.date}
-                  onChange={(e) => setNewAward({ ...newAward, date: e.target.value })}
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   placeholder="03/2023"
                 />
               </div>
@@ -81,16 +107,20 @@ export function AwardsForm() {
             <div>
               <Label>Description (Optional)</Label>
               <Textarea
-                value={newAward.description || ''}
-                onChange={(e) => setNewAward({ ...newAward, description: e.target.value })}
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Professional level certification for designing distributed systems"
                 rows={2}
               />
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddAward}>Save Award</Button>
-              <Button variant="outline" onClick={() => setIsAdding(false)}>
+              {editingId ? (
+                <Button onClick={handleUpdateAward}>Update Award</Button>
+              ) : (
+                <Button onClick={handleAddAward}>Save Award</Button>
+              )}
+              <Button variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
             </div>
@@ -100,7 +130,7 @@ export function AwardsForm() {
 
       <div className="space-y-4">
         {resumeData.awards.map((award) => (
-          <Card key={award.id} className="p-4">
+          <Card key={award.id} className={`p-4 ${editingId === award.id ? 'ring-2 ring-primary' : ''}`}>
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
                 <AwardIcon className="h-5 w-5 mt-1 text-muted-foreground" />
@@ -115,17 +145,32 @@ export function AwardsForm() {
                   )}
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => removeAward(award.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => startEditing(award)}
+                  disabled={isFormOpen}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeAward(award.id)}
+                  disabled={isFormOpen}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
       </div>
 
-      {resumeData.awards.length === 0 && !isAdding && (
+      {resumeData.awards.length === 0 && !isFormOpen && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No awards or certifications added yet. Click "Add Award" to showcase your achievements.
+          No awards or certifications added yet. Click &quot;Add Award&quot; to showcase your achievements.
         </p>
       )}
     </Card>

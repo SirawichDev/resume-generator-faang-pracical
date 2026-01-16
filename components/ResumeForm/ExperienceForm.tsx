@@ -7,14 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Briefcase } from 'lucide-react';
+import { Plus, Trash2, Briefcase, Pencil } from 'lucide-react';
 import { Experience } from '@/types/resume';
 
 export function ExperienceForm() {
-  const { resumeData, addExperience, removeExperience } = useResumeStore();
+  const { resumeData, addExperience, updateExperience, removeExperience } = useResumeStore();
   const [isAdding, setIsAdding] = useState(false);
-  const [newExp, setNewExp] = useState<Omit<Experience, 'id'>>({
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Omit<Experience, 'id'>>({
     company: '',
     location: '',
     position: '',
@@ -24,15 +24,8 @@ export function ExperienceForm() {
     accomplishments: [''],
   });
 
-  const handleAddExperience = () => {
-    if (!newExp.company || !newExp.position) return;
-    
-    addExperience({
-      ...newExp,
-      id: Date.now().toString(),
-    });
-    
-    setNewExp({
+  const resetForm = () => {
+    setFormData({
       company: '',
       location: '',
       position: '',
@@ -42,52 +35,87 @@ export function ExperienceForm() {
       accomplishments: [''],
     });
     setIsAdding(false);
+    setEditingId(null);
+  };
+
+  const handleAddExperience = () => {
+    if (!formData.company || !formData.position) return;
+    
+    addExperience({
+      ...formData,
+      id: Date.now().toString(),
+    });
+    
+    resetForm();
+  };
+
+  const handleUpdateExperience = () => {
+    if (!editingId || !formData.company || !formData.position) return;
+    
+    updateExperience(editingId, formData);
+    resetForm();
+  };
+
+  const startEditing = (exp: Experience) => {
+    setEditingId(exp.id);
+    setFormData({
+      company: exp.company,
+      location: exp.location,
+      position: exp.position,
+      startDate: exp.startDate,
+      endDate: exp.endDate,
+      current: exp.current,
+      accomplishments: exp.accomplishments.length > 0 ? [...exp.accomplishments] : [''],
+    });
+    setIsAdding(false);
   };
 
   const updateAccomplishment = (index: number, value: string) => {
-    const updated = [...newExp.accomplishments];
+    const updated = [...formData.accomplishments];
     updated[index] = value;
-    setNewExp({ ...newExp, accomplishments: updated });
+    setFormData({ ...formData, accomplishments: updated });
   };
 
   const addAccomplishment = () => {
-    setNewExp({ ...newExp, accomplishments: [...newExp.accomplishments, ''] });
+    setFormData({ ...formData, accomplishments: [...formData.accomplishments, ''] });
   };
 
   const removeAccomplishment = (index: number) => {
-    setNewExp({
-      ...newExp,
-      accomplishments: newExp.accomplishments.filter((_, i) => i !== index),
+    setFormData({
+      ...formData,
+      accomplishments: formData.accomplishments.filter((_, i) => i !== index),
     });
   };
+
+  const isFormOpen = isAdding || editingId !== null;
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Work Experience</h2>
-        <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
+        <Button onClick={() => { resetForm(); setIsAdding(true); }} disabled={isFormOpen}>
           <Plus className="h-4 w-4 mr-1" />
           Add Experience
         </Button>
       </div>
 
-      {isAdding && (
+      {isFormOpen && (
         <Card className="p-4 mb-4 bg-muted/50">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Company *</Label>
                 <Input
-                  value={newExp.company}
-                  onChange={(e) => setNewExp({ ...newExp, company: e.target.value })}
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   placeholder="Google"
                 />
               </div>
               <div>
                 <Label>Location *</Label>
                 <Input
-                  value={newExp.location}
-                  onChange={(e) => setNewExp({ ...newExp, location: e.target.value })}
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="Mountain View, CA"
                 />
               </div>
@@ -96,8 +124,8 @@ export function ExperienceForm() {
             <div>
               <Label>Position *</Label>
               <Input
-                value={newExp.position}
-                onChange={(e) => setNewExp({ ...newExp, position: e.target.value })}
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                 placeholder="Senior Software Engineer"
               />
             </div>
@@ -106,25 +134,25 @@ export function ExperienceForm() {
               <div>
                 <Label>Start Date (MM/YYYY)</Label>
                 <Input
-                  value={newExp.startDate}
-                  onChange={(e) => setNewExp({ ...newExp, startDate: e.target.value })}
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                   placeholder="01/2020"
                 />
               </div>
               <div>
                 <Label>End Date (MM/YYYY)</Label>
                 <Input
-                  value={newExp.endDate}
-                  onChange={(e) => setNewExp({ ...newExp, endDate: e.target.value })}
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                   placeholder="Present"
-                  disabled={newExp.current}
+                  disabled={formData.current}
                 />
                 <div className="flex items-center mt-2">
                   <input
                     type="checkbox"
                     id="current"
-                    checked={newExp.current}
-                    onChange={(e) => setNewExp({ ...newExp, current: e.target.checked })}
+                    checked={formData.current}
+                    onChange={(e) => setFormData({ ...formData, current: e.target.checked })}
                     className="mr-2"
                   />
                   <Label htmlFor="current" className="cursor-pointer">Currently working here</Label>
@@ -138,7 +166,7 @@ export function ExperienceForm() {
                 Use the format: [Action] that resulted in [quantifiable outcome]
               </p>
               <div className="space-y-2">
-                {newExp.accomplishments.map((acc, index) => (
+                {formData.accomplishments.map((acc, index) => (
                   <div key={index} className="flex gap-2">
                     <Textarea
                       value={acc}
@@ -150,7 +178,7 @@ export function ExperienceForm() {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeAccomplishment(index)}
-                      disabled={newExp.accomplishments.length === 1}
+                      disabled={formData.accomplishments.length === 1}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -169,8 +197,12 @@ export function ExperienceForm() {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddExperience}>Save Experience</Button>
-              <Button variant="outline" onClick={() => setIsAdding(false)}>
+              {editingId ? (
+                <Button onClick={handleUpdateExperience}>Update Experience</Button>
+              ) : (
+                <Button onClick={handleAddExperience}>Save Experience</Button>
+              )}
+              <Button variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
             </div>
@@ -180,7 +212,7 @@ export function ExperienceForm() {
 
       <div className="space-y-4">
         {resumeData.experience.map((exp) => (
-          <Card key={exp.id} className="p-4">
+          <Card key={exp.id} className={`p-4 ${editingId === exp.id ? 'ring-2 ring-primary' : ''}`}>
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
                 <Briefcase className="h-5 w-5 mt-1 text-muted-foreground" />
@@ -203,21 +235,32 @@ export function ExperienceForm() {
                   )}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeExperience(exp.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => startEditing(exp)}
+                  disabled={isFormOpen}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeExperience(exp.id)}
+                  disabled={isFormOpen}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
       </div>
 
-      {resumeData.experience.length === 0 && !isAdding && (
+      {resumeData.experience.length === 0 && !isFormOpen && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No work experience added yet. Click "Add Experience" to get started.
+          No work experience added yet. Click &quot;Add Experience&quot; to get started.
         </p>
       )}
     </Card>

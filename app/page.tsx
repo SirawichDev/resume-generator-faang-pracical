@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { ContactInfoForm } from '@/components/ResumeForm/ContactInfoForm';
 import { SummaryForm } from '@/components/ResumeForm/SummaryForm';
 import { SkillsForm } from '@/components/ResumeForm/SkillsForm';
@@ -9,26 +8,11 @@ import { ProjectsForm } from '@/components/ResumeForm/ProjectsForm';
 import { EducationForm } from '@/components/ResumeForm/EducationForm';
 import { AwardsForm } from '@/components/ResumeForm/AwardsForm';
 import { ResumePreview } from '@/components/ResumePreview/ResumePreview';
+import { PDFDownloadButton } from '@/components/ResumePDF/PDFDownloadButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Download, FileText } from 'lucide-react';
-import { generateResumePDF } from '@/lib/pdf-generator';
+import { FileText } from 'lucide-react';
 
 export default function Home() {
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleDownloadPDF = async () => {
-    setIsGenerating(true);
-    try {
-      await generateResumePDF('resume-preview', 'my-resume.pdf');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
       {/* Header */}
@@ -46,15 +30,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={handleDownloadPDF}
-              disabled={isGenerating}
-              size="lg"
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              {isGenerating ? 'Generating...' : 'Download PDF'}
-            </Button>
+            <PDFDownloadButton filename="my-resume.pdf" />
           </div>
         </div>
       </header>

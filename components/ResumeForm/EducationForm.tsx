@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, GraduationCap } from 'lucide-react';
+import { Plus, Trash2, GraduationCap, Pencil } from 'lucide-react';
 import { Education } from '@/types/resume';
 
 export function EducationForm() {
-  const { resumeData, addEducation, removeEducation } = useResumeStore();
+  const { resumeData, addEducation, updateEducation, removeEducation } = useResumeStore();
   const [isAdding, setIsAdding] = useState(false);
-  const [newEdu, setNewEdu] = useState<Omit<Education, 'id'>>({
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Omit<Education, 'id'>>({
     institution: '',
     degree: '',
     field: '',
@@ -24,15 +25,8 @@ export function EducationForm() {
   });
   const [newHonor, setNewHonor] = useState('');
 
-  const handleAddEducation = () => {
-    if (!newEdu.institution || !newEdu.degree || !newEdu.field) return;
-    
-    addEducation({
-      ...newEdu,
-      id: Date.now().toString(),
-    });
-    
-    setNewEdu({
+  const resetForm = () => {
+    setFormData({
       institution: '',
       degree: '',
       field: '',
@@ -44,48 +38,84 @@ export function EducationForm() {
     });
     setNewHonor('');
     setIsAdding(false);
+    setEditingId(null);
+  };
+
+  const handleAddEducation = () => {
+    if (!formData.institution || !formData.degree || !formData.field) return;
+    
+    addEducation({
+      ...formData,
+      id: Date.now().toString(),
+    });
+    
+    resetForm();
+  };
+
+  const handleUpdateEducation = () => {
+    if (!editingId || !formData.institution || !formData.degree || !formData.field) return;
+    
+    updateEducation(editingId, formData);
+    resetForm();
+  };
+
+  const startEditing = (edu: Education) => {
+    setEditingId(edu.id);
+    setFormData({
+      institution: edu.institution,
+      degree: edu.degree,
+      field: edu.field,
+      location: edu.location,
+      startDate: edu.startDate,
+      endDate: edu.endDate,
+      gpa: edu.gpa || '',
+      honors: edu.honors ? [...edu.honors] : [],
+    });
+    setIsAdding(false);
   };
 
   const addHonor = () => {
     if (!newHonor.trim()) return;
-    setNewEdu({ ...newEdu, honors: [...(newEdu.honors || []), newHonor.trim()] });
+    setFormData({ ...formData, honors: [...(formData.honors || []), newHonor.trim()] });
     setNewHonor('');
   };
 
   const removeHonor = (index: number) => {
-    setNewEdu({
-      ...newEdu,
-      honors: newEdu.honors?.filter((_, i) => i !== index) || [],
+    setFormData({
+      ...formData,
+      honors: formData.honors?.filter((_, i) => i !== index) || [],
     });
   };
+
+  const isFormOpen = isAdding || editingId !== null;
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Education</h2>
-        <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
+        <Button onClick={() => { resetForm(); setIsAdding(true); }} disabled={isFormOpen}>
           <Plus className="h-4 w-4 mr-1" />
           Add Education
         </Button>
       </div>
 
-      {isAdding && (
+      {isFormOpen && (
         <Card className="p-4 mb-4 bg-muted/50">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Institution *</Label>
                 <Input
-                  value={newEdu.institution}
-                  onChange={(e) => setNewEdu({ ...newEdu, institution: e.target.value })}
+                  value={formData.institution}
+                  onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
                   placeholder="Stanford University"
                 />
               </div>
               <div>
                 <Label>Location *</Label>
                 <Input
-                  value={newEdu.location}
-                  onChange={(e) => setNewEdu({ ...newEdu, location: e.target.value })}
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="Stanford, CA"
                 />
               </div>
@@ -95,16 +125,16 @@ export function EducationForm() {
               <div>
                 <Label>Degree *</Label>
                 <Input
-                  value={newEdu.degree}
-                  onChange={(e) => setNewEdu({ ...newEdu, degree: e.target.value })}
+                  value={formData.degree}
+                  onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
                   placeholder="Bachelor of Science"
                 />
               </div>
               <div>
                 <Label>Field of Study *</Label>
                 <Input
-                  value={newEdu.field}
-                  onChange={(e) => setNewEdu({ ...newEdu, field: e.target.value })}
+                  value={formData.field}
+                  onChange={(e) => setFormData({ ...formData, field: e.target.value })}
                   placeholder="Computer Science"
                 />
               </div>
@@ -114,24 +144,24 @@ export function EducationForm() {
               <div>
                 <Label>Start Date (MM/YYYY)</Label>
                 <Input
-                  value={newEdu.startDate}
-                  onChange={(e) => setNewEdu({ ...newEdu, startDate: e.target.value })}
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                   placeholder="09/2016"
                 />
               </div>
               <div>
                 <Label>End Date (MM/YYYY)</Label>
                 <Input
-                  value={newEdu.endDate}
-                  onChange={(e) => setNewEdu({ ...newEdu, endDate: e.target.value })}
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                   placeholder="06/2020"
                 />
               </div>
               <div>
                 <Label>GPA (Optional)</Label>
                 <Input
-                  value={newEdu.gpa || ''}
-                  onChange={(e) => setNewEdu({ ...newEdu, gpa: e.target.value })}
+                  value={formData.gpa || ''}
+                  onChange={(e) => setFormData({ ...formData, gpa: e.target.value })}
                   placeholder="3.8/4.0"
                 />
               </div>
@@ -150,9 +180,9 @@ export function EducationForm() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              {newEdu.honors && newEdu.honors.length > 0 && (
+              {formData.honors && formData.honors.length > 0 && (
                 <div className="space-y-1">
-                  {newEdu.honors.map((honor, index) => (
+                  {formData.honors.map((honor, index) => (
                     <div key={index} className="flex justify-between items-center bg-background p-2 rounded">
                       <span className="text-sm">{honor}</span>
                       <Button variant="ghost" size="sm" onClick={() => removeHonor(index)}>
@@ -165,8 +195,12 @@ export function EducationForm() {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddEducation}>Save Education</Button>
-              <Button variant="outline" onClick={() => setIsAdding(false)}>
+              {editingId ? (
+                <Button onClick={handleUpdateEducation}>Update Education</Button>
+              ) : (
+                <Button onClick={handleAddEducation}>Save Education</Button>
+              )}
+              <Button variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
             </div>
@@ -176,7 +210,7 @@ export function EducationForm() {
 
       <div className="space-y-4">
         {resumeData.education.map((edu) => (
-          <Card key={edu.id} className="p-4">
+          <Card key={edu.id} className={`p-4 ${editingId === edu.id ? 'ring-2 ring-primary' : ''}`}>
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
                 <GraduationCap className="h-5 w-5 mt-1 text-muted-foreground" />
@@ -204,17 +238,32 @@ export function EducationForm() {
                   )}
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => removeEducation(edu.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => startEditing(edu)}
+                  disabled={isFormOpen}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeEducation(edu.id)}
+                  disabled={isFormOpen}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
       </div>
 
-      {resumeData.education.length === 0 && !isAdding && (
+      {resumeData.education.length === 0 && !isFormOpen && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No education added yet. Click "Add Education" to get started.
+          No education added yet. Click &quot;Add Education&quot; to get started.
         </p>
       )}
     </Card>

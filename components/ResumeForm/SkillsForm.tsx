@@ -11,6 +11,7 @@ import { Plus, X } from 'lucide-react';
 
 export function SkillsForm() {
   const { resumeData, setSkills } = useResumeStore();
+  console.log("🚀 ~ SkillsForm ~ resumeData:", resumeData)
   const [newCategory, setNewCategory] = useState('');
   const [newSkill, setNewSkill] = useState('');
 
@@ -89,12 +90,16 @@ export function SkillsForm() {
 
             <div className="flex gap-2">
               <Input
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
+                onChange={(e) => {
+                  console.log('ee', e)
+                  console.log('ee', e.target.id)
+                  setNewSkill(e.target.value)
+                }}
                 placeholder="Add skill..."
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     addSkillToCategory(categoryIndex);
+                    setNewSkill('');
                   }
                 }}
               />

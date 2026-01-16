@@ -8,13 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, FolderGit2, X } from 'lucide-react';
+import { Plus, Trash2, FolderGit2, X, Pencil } from 'lucide-react';
 import { Project } from '@/types/resume';
 
 export function ProjectsForm() {
-  const { resumeData, addProject, removeProject } = useResumeStore();
+  const { resumeData, addProject, updateProject, removeProject } = useResumeStore();
   const [isAdding, setIsAdding] = useState(false);
-  const [newProject, setNewProject] = useState<Omit<Project, 'id'>>({
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Omit<Project, 'id'>>({
     name: '',
     description: '',
     technologies: [],
@@ -24,16 +25,8 @@ export function ProjectsForm() {
   });
   const [newTech, setNewTech] = useState('');
 
-  const handleAddProject = () => {
-    if (!newProject.name || !newProject.description) return;
-    
-    addProject({
-      ...newProject,
-      id: Date.now().toString(),
-      highlights: newProject.highlights.filter((h) => h.trim()),
-    });
-    
-    setNewProject({
+  const resetForm = () => {
+    setFormData({
       name: '',
       description: '',
       technologies: [],
@@ -41,60 +34,99 @@ export function ProjectsForm() {
       link: '',
       github: '',
     });
+    setNewTech('');
+    setIsAdding(false);
+    setEditingId(null);
+  };
+
+  const handleAddProject = () => {
+    if (!formData.name || !formData.description) return;
+    
+    addProject({
+      ...formData,
+      id: Date.now().toString(),
+      highlights: formData.highlights.filter((h) => h.trim()),
+    });
+    
+    resetForm();
+  };
+
+  const handleUpdateProject = () => {
+    if (!editingId || !formData.name || !formData.description) return;
+    
+    updateProject(editingId, {
+      ...formData,
+      highlights: formData.highlights.filter((h) => h.trim()),
+    });
+    resetForm();
+  };
+
+  const startEditing = (project: Project) => {
+    setEditingId(project.id);
+    setFormData({
+      name: project.name,
+      description: project.description,
+      technologies: [...project.technologies],
+      highlights: project.highlights.length > 0 ? [...project.highlights] : [''],
+      link: project.link || '',
+      github: project.github || '',
+    });
     setIsAdding(false);
   };
 
   const addTechnology = () => {
     if (!newTech.trim()) return;
-    setNewProject({
-      ...newProject,
-      technologies: [...newProject.technologies, newTech.trim()],
+    setFormData({
+      ...formData,
+      technologies: [...formData.technologies, newTech.trim()],
     });
     setNewTech('');
   };
 
   const removeTechnology = (index: number) => {
-    setNewProject({
-      ...newProject,
-      technologies: newProject.technologies.filter((_, i) => i !== index),
+    setFormData({
+      ...formData,
+      technologies: formData.technologies.filter((_, i) => i !== index),
     });
   };
 
   const updateHighlight = (index: number, value: string) => {
-    const updated = [...newProject.highlights];
+    const updated = [...formData.highlights];
     updated[index] = value;
-    setNewProject({ ...newProject, highlights: updated });
+    setFormData({ ...formData, highlights: updated });
   };
 
   const addHighlight = () => {
-    setNewProject({ ...newProject, highlights: [...newProject.highlights, ''] });
+    setFormData({ ...formData, highlights: [...formData.highlights, ''] });
   };
 
   const removeHighlight = (index: number) => {
-    setNewProject({
-      ...newProject,
-      highlights: newProject.highlights.filter((_, i) => i !== index),
+    setFormData({
+      ...formData,
+      highlights: formData.highlights.filter((_, i) => i !== index),
     });
   };
+
+  const isFormOpen = isAdding || editingId !== null;
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Projects</h2>
-        <Button onClick={() => setIsAdding(true)} disabled={isAdding}>
+        <Button onClick={() => { resetForm(); setIsAdding(true); }} disabled={isFormOpen}>
           <Plus className="h-4 w-4 mr-1" />
           Add Project
         </Button>
       </div>
 
-      {isAdding && (
+      {isFormOpen && (
         <Card className="p-4 mb-4 bg-muted/50">
           <div className="space-y-4">
             <div>
               <Label>Project Name *</Label>
               <Input
-                value={newProject.name}
-                onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="E-commerce Platform"
               />
             </div>
@@ -102,8 +134,8 @@ export function ProjectsForm() {
             <div>
               <Label>Description *</Label>
               <Textarea
-                value={newProject.description}
-                onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="A full-stack e-commerce platform with real-time inventory management"
                 rows={2}
               />
@@ -123,7 +155,7 @@ export function ProjectsForm() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {newProject.technologies.map((tech, index) => (
+                {formData.technologies.map((tech, index) => (
                   <Badge key={index} variant="secondary">
                     {tech}
                     <button
@@ -140,7 +172,7 @@ export function ProjectsForm() {
             <div>
               <Label>Key Highlights</Label>
               <div className="space-y-2">
-                {newProject.highlights.map((highlight, index) => (
+                {formData.highlights.map((highlight, index) => (
                   <div key={index} className="flex gap-2">
                     <Textarea
                       value={highlight}
@@ -152,7 +184,7 @@ export function ProjectsForm() {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeHighlight(index)}
-                      disabled={newProject.highlights.length === 1}
+                      disabled={formData.highlights.length === 1}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -169,24 +201,28 @@ export function ProjectsForm() {
               <div>
                 <Label>Live Link</Label>
                 <Input
-                  value={newProject.link || ''}
-                  onChange={(e) => setNewProject({ ...newProject, link: e.target.value })}
+                  value={formData.link || ''}
+                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
                   placeholder="https://project-demo.com"
                 />
               </div>
               <div>
                 <Label>GitHub Repository</Label>
                 <Input
-                  value={newProject.github || ''}
-                  onChange={(e) => setNewProject({ ...newProject, github: e.target.value })}
+                  value={formData.github || ''}
+                  onChange={(e) => setFormData({ ...formData, github: e.target.value })}
                   placeholder="github.com/username/project"
                 />
               </div>
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddProject}>Save Project</Button>
-              <Button variant="outline" onClick={() => setIsAdding(false)}>
+              {editingId ? (
+                <Button onClick={handleUpdateProject}>Update Project</Button>
+              ) : (
+                <Button onClick={handleAddProject}>Save Project</Button>
+              )}
+              <Button variant="outline" onClick={resetForm}>
                 Cancel
               </Button>
             </div>
@@ -196,7 +232,7 @@ export function ProjectsForm() {
 
       <div className="space-y-4">
         {resumeData.projects.map((project) => (
-          <Card key={project.id} className="p-4">
+          <Card key={project.id} className={`p-4 ${editingId === project.id ? 'ring-2 ring-primary' : ''}`}>
             <div className="flex justify-between items-start">
               <div className="flex gap-3 flex-1">
                 <FolderGit2 className="h-5 w-5 mt-1 text-muted-foreground" />
@@ -230,17 +266,32 @@ export function ProjectsForm() {
                   )}
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => removeProject(project.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => startEditing(project)}
+                  disabled={isFormOpen}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeProject(project.id)}
+                  disabled={isFormOpen}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
       </div>
 
-      {resumeData.projects.length === 0 && !isAdding && (
+      {resumeData.projects.length === 0 && !isFormOpen && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          No projects added yet. Click "Add Project" to showcase your work.
+          No projects added yet. Click &quot;Add Project&quot; to showcase your work.
         </p>
       )}
     </Card>
